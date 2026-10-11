@@ -1,0 +1,1 @@
+{"name":"after-the-last-bell","private":true,"type":"module","scripts":{"dev":"vite --host 127.0.0.1 --port 5191 --strictPort --configLoader native","build":"vite build --configLoader native","preview":"node serve.mjs","verify":"node tools/verify-game.mjs"},"dependencies":{"three":"^0.180.0"},"devDependencies":{"vite":"^7.1.0"}}

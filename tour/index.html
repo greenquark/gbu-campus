@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#f6f4ec" /><meta name="description" content="GBU Campus: an independent 3D study inspired by Great Bay University. Explore the architecture by day or enter a fictional haunted campus after dark." />
+  <title>GBU Campus · Day tour</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="stylesheet" href="../shared/campus.css" />
+</head>
+<body data-campus-mode="day">
+  <main id="experience" aria-label="Great Bay University virtual campus visit">
+    <canvas id="world" tabindex="0" aria-label="Interactive 3D campus. Use W A S D to walk and drag to look. Press H for controls."></canvas>
+    <div id="scene-fade" aria-hidden="true"></div>
+    <header class="masthead campus-masthead">
+      <a class="wordmark campus-brand" href="/" aria-label="GBU Campus — day tour"><strong>GBU</strong><span>Campus<small>Great Bay University</small></span></a>
+      <nav class="campus-modes" aria-label="Campus experiences">
+        <a href="/" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><span>Day tour</span></a>
+        <a href="/night/"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.4 14.3A8.6 8.6 0 0 1 9.7 3.6a8.7 8.7 0 1 0 10.7 10.7Z"/></svg><span>Haunted night</span></a>
+      </nav>
+      <div class="tools" aria-label="Visit tools">
+        <button id="sound" class="icon-button" aria-label="Turn ambience on" aria-pressed="false" title="Ambience"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Zm5 4 5 6m0-6-5 6"/></svg></button>
+        <button id="settings" class="icon-button" aria-label="Open settings" title="Settings"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16M9 4v6m6 4v6"/></svg></button>
+        <button id="help" class="icon-button" aria-label="How to explore" title="Controls and information"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4m0 3h.01"/></svg></button>
+        <button id="fullscreen" class="icon-button desktop-only" aria-label="Enter fullscreen" title="Fullscreen"><svg viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
+      </div>
+    </header>
+    <section id="welcome" class="welcome" aria-labelledby="welcome-title">
+      <h1 id="welcome-title">A place to<br>see what’s next.</h1>
+      <p>Explore the campus from its physical model.<br>Curved gardens, teaching blocks, courts and towers.</p>
+      <div class="welcome-actions"><button id="start-tour" class="primary" disabled>Preparing your visit…</button><button id="start-walk" class="text-button" disabled>Explore on foot</button></div>
+      <div id="loading" class="loading" role="status"><span id="loading-text">Preparing architecture and landscape</span><div class="loading-track"><i id="loading-bar"></i></div></div>
+      <div id="load-error" hidden role="alert"><p>The 3D scene could not load. Check your connection, then reload the visit.</p><button id="retry" class="primary">Reload the visit</button></div>
+    </section>
+    <div id="location-note" class="location-note" hidden><h1 id="place-title">The flag plaza</h1><p id="place-description">A campus arranged around its curved garden building.</p></div>
+    <div id="visit-status" class="status" role="status" aria-live="polite" hidden></div>
+    <div class="bottom-area">
+      <nav id="places" class="places" aria-label="Places to visit" hidden>
+        <button data-place="plaza" aria-current="location"><span class="place-dot"></span>Plaza</button><span class="route-line" aria-hidden="true"></span>
+        <button data-place="entrance"><span class="place-dot"></span>Water court</button><span class="route-line" aria-hidden="true"></span>
+        <button data-place="lobby"><span class="place-dot"></span>West block</button><button data-place="sports"><span class="place-dot"></span>Sports hall</button><button data-place="residence"><span class="place-dot"></span>Dormitories</button><button data-place="towers"><span class="place-dot"></span>Towers</button>
+      </nav>
+      <div id="visit-controls" class="visit-controls" hidden><button id="tour-toggle" class="primary">Guided visit <svg viewBox="0 0 24 24"><path d="m9 5 10 7-10 7Z"/></svg></button><button id="reset" class="icon-button" aria-label="Return to the plaza" title="Return to plaza"><svg viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg></button></div>
+    </div>
+    <div id="touch-controls" class="touch-controls" hidden aria-label="Touch movement"><button data-move="forward" aria-label="Walk forward"><svg viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button><button data-move="left" aria-label="Walk left"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button><button data-move="back" aria-label="Walk backward"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button><button data-move="right" aria-label="Walk right"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button></div>
+    <p id="gesture-hint" class="gesture-hint" hidden>W A S D to walk · drag to look · Esc to pause</p>
+    <footer class="provenance">Independent study <span>·</span> Model-based layout <span>·</span> Interpreted scale</footer>
+  </main>
+  <dialog id="help-dialog" aria-labelledby="help-title"><button class="close-dialog icon-button" aria-label="Close controls"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></svg></button><h2 id="help-title">Make yourself at home.</h2><p>Take the guided visit, or move at your own pace.</p><dl class="instructions"><div><dt>Walk</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys</dd></div><div><dt>Look around</dt><dd>Drag the scene · <kbd>Q</kbd> / <kbd>E</kbd> to turn</dd></div><div><dt>Walk faster</dt><dd>Hold <kbd>Shift</kbd></dd></div><div><dt>Pause / resume</dt><dd><kbd>Esc</kbd> or the visit button</dd></div><div><dt>On a touch screen</dt><dd>Use the direction buttons; drag elsewhere to look.</dd></div></dl><p class="model-note">This independent study uses the supplied physical-model views for relative building locations and campus photos for facade details. It is not an official university tour. Distances are compressed for exploration; unseen interiors are interpreted. Haunted night uses the same campus with fictional characters and challenges.</p><button class="primary close-dialog">Continue exploring</button></dialog>
+  <dialog id="settings-dialog" aria-labelledby="settings-title"><button class="close-dialog icon-button" aria-label="Close settings"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></svg></button><h2 id="settings-title">Your pace, your view.</h2><label class="setting-row" for="quality"><span>Rendering detail<small>Balanced uses less graphics power.</small></span><select id="quality"><option value="high">High</option><option value="balanced">Balanced</option></select></label><label class="setting-row" for="reduced-motion"><span>Reduce camera motion<small>Visit each place without an automatic walk.</small></span><input type="checkbox" id="reduced-motion" /></label><label class="setting-row" for="sensitivity"><span>Look sensitivity</span><input id="sensitivity" type="range" min="0.5" max="2" step="0.1" value="1" /></label><button class="primary close-dialog">Back to the visit</button></dialog>
+  <script type="module" src="./src/main.js"></script>
+</body></html>
+

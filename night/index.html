@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101d22" />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../shared/campus.css" />
+  <meta name="description" content="After the Last Bell — a fictional mystery on a model-based GBU campus. Cross the water court, teaching block, sports track and dormitory arcade to recover four memories." />
+  <title>GBU Campus · After the Last Bell</title>
+</head>
+<body data-campus-mode="night">
+  <main id="game" aria-label="After the Last Bell, a single-player haunted campus game">
+    <div id="scene" aria-label="3D campus. W A S D to walk, drag to look, Shift to sprint, Space to kick, E to interact." tabindex="0"></div>
+    <div id="ui" data-mode="title">
+      <div class="screen-shade" aria-hidden="true"></div>
+      <div id="bite-effect" class="bite-effect" aria-hidden="true"><i></i><i></i><i></i></div>
+      <header class="masthead campus-masthead">
+        <a class="edition-mark campus-brand" href="#" id="home-mark" aria-label="GBU Campus — return to night title"><strong>GBU</strong><span>Campus<small>Great Bay University</small></span></a>
+        <nav class="campus-modes" aria-label="Campus experiences">
+          <a href="/"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><span>Day tour</span></a>
+          <a href="/night/" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.4 14.3A8.6 8.6 0 0 1 9.7 3.6a8.7 8.7 0 1 0 10.7 10.7Z"/></svg><span>Haunted night</span></a>
+        </nav>
+        <nav class="utility-nav" aria-label="Game settings">
+          <button id="sound-button" class="icon-button" title="Toggle sound" aria-label="Sound on" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 4-6 5H2v6h3l6 5V4Zm4 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></svg><span class="sound-slash" aria-hidden="true">/</span></button>
+          <button id="quality-button" class="text-icon" title="Change rendering quality"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v13H3zM8 22h8M12 18v4"/></svg><span id="quality-label">Auto</span></button>
+          <button id="map-button" class="icon-button game-only" title="Campus map (M)" aria-label="Open campus map" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m2 5 6-3 8 3 6-3v17l-6 3-8-3-6 3V5Zm6-3v17m8-14v17"/></svg></button>
+          <button id="pause-button" class="icon-button game-only" title="Pause (Escape)" aria-label="Pause game"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg></button>
+        </nav>
+      </header>
+
+      <section id="title-screen" class="title-screen" aria-labelledby="game-title">
+        <div class="title-copy">
+          <p class="eyebrow"><span class="tiny-star" aria-hidden="true">✦</span> A SINGLE-PLAYER CAMPUS MYSTERY</p>
+          <h1 id="game-title">After the<br>Last <em>Bell.</em></h1>
+          <p class="title-story">Everyone left something behind.<br>Tonight, the campus remembers.</p>
+          <p class="title-description">From the water court to the sports track, four memories wait across GBU. Outrun the missing students, kick free when they close in, and return to the plaza gate.</p>
+          <div class="title-actions"><button id="start-button" class="button primary" disabled>Begin the night <span aria-hidden="true">↗</span></button><button id="demo-button" class="button secondary" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 3 11 7-11 7Z"/></svg>Watch demo</button></div>
+          <div id="loading" class="loading" role="status"><span id="loading-label">Waking the campus…</span><div class="loading-track"><i id="loading-progress"></i></div></div>
+          <div class="title-details"><span><i class="warm-dot"></i> Lantern light means safety</span><span><i class="cold-dot"></i> The Listener follows noise</span><span>Four places · Four different challenges</span></div>
+        </div>
+        <div class="title-location" aria-hidden="true"><span>FIELD NOTES / 00:13</span><div>Some places<br>never quite sleep.</div><i></i></div>
+        <footer class="title-footer"><span>Based on the campus model · Fictional story · Unofficial experience</span><span>Headphones recommended <i aria-hidden="true">·</i> Play at your pace</span></footer>
+      </section>
+
+      <section id="hud" class="hud" aria-label="Game status" hidden>
+        <div class="objective-block"><p class="eyebrow"><span id="memory-count">0 / 4</span> MEMORIES RECOVERED</p><h2 id="objective">Find the lost memories.</h2><p id="hint">Follow the lantern-lit paths.</p><p id="navigation-label" class="navigation-label" hidden></p><div id="track-status" class="track-status" role="timer" hidden><span id="track-progress">TRACK · 1 / 4</span><b id="track-clock">30s</b></div><ol id="memory-list" class="memory-list" aria-label="Lost memories"><li data-memory="library"><i></i><span>The corridor whisper</span></li><li data-memory="greenhouse"><i></i><span>The water reflection</span></li><li data-memory="observatory"><i></i><span>The final lap</span></li><li data-memory="residence"><i></i><span>The room-call melody</span></li></ol></div>
+        <div class="survival-block"><div id="safety-label" class="safety-label"><span></span><b>Beyond the lanterns</b></div><div class="meter-row blood-row"><span>Blood</span><div class="meter-track blood"><i id="health-fill"></i></div><b id="health-value">100</b></div><div class="meter-row"><span>Composure</span><div class="meter-track"><i id="composure-fill"></i></div><b id="composure-value">100</b></div><div class="meter-row"><span id="torch-label">Torch</span><div class="meter-track battery"><i id="battery-fill"></i></div><b id="battery-value">100</b></div><div class="noise-row"><span id="noise-label">Quiet footsteps</span><div class="noise-bars" id="noise-bars" aria-label="Noise level"><i></i><i></i><i></i><i></i><i></i></div></div></div>
+        <div class="quick-controls"><span><kbd>W A S D</kbd> move</span><span>drag to look</span><span><kbd>E</kbd> hold to interact</span><span><kbd>F</kbd> torch</span><span><kbd>Q</kbd> bell</span><span><kbd>Shift</kbd> run</span><span><kbd>Space</kbd> kick</span></div>
+        <div class="combat-status"><span id="chase-label">No footsteps behind you</span><span class="kick-status"><kbd>SPACE</kbd><span id="kick-label">Kick ready</span></span></div>
+        <div class="bell-status"><svg class="bell-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16l-3-5V9A5 5 0 0 0 7 9v4l-3 5Zm6 3h4M12 2v2"/></svg><span id="bell-label">Decoy bell ready</span></div>
+      </section>
+      <div id="reticle" class="reticle" aria-hidden="true" hidden></div>
+      <p id="event-message" class="event-message" role="status" aria-live="polite" hidden></p>
+      <section id="focus-prompt" class="focus-prompt" aria-label="Nearby interaction" hidden><span class="interaction-key">HOLD E</span><div><h3 id="focus-title"></h3><p id="focus-instruction"></p><div class="ritual-track"><i id="ritual-progress"></i></div></div></section>
+      <div id="note-controls" class="note-controls" hidden aria-label="Play dormitory notes"><button data-note="1"><kbd>1</kbd><span>Low</span></button><button data-note="2"><kbd>2</kbd><span>Middle</span></button><button data-note="3"><kbd>3</kbd><span>High</span></button></div>
+      <div id="demo-strip" class="demo-strip" hidden><div><span class="demo-label"><i></i> LIVE DEMO</span><p id="demo-caption">Walking the same paths you can explore.</p></div><button id="take-control-button" class="button compact">Take control <span aria-hidden="true">↗</span></button></div>
+
+      <aside id="map-panel" class="map-panel" aria-labelledby="map-title" hidden><div class="map-heading"><div><p class="eyebrow">NIGHT PORTER’S PLAN</p><h2 id="map-title">Across the campus</h2></div><button id="map-close" class="icon-button" aria-label="Close map">×</button></div>
+        <svg class="campus-map" viewBox="0 0 630 340" role="img" aria-label="Model-relative campus plan. Towers and west teaching block are left of the curved building. Sports hall, track and dormitories are on the right. Plaza gate is at the front.">
+          <defs><pattern id="map-grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0v24" fill="none" stroke="currentColor" opacity=".07"/></pattern></defs><rect width="630" height="340" fill="url(#map-grid)"/>
+          <g id="map-layout"></g>
+          <circle id="map-target" class="map-target" r="15" hidden/>
+          <circle id="map-ghost" class="map-ghost" r="5" hidden/>
+          <g id="map-player" class="map-player"><circle r="8"/><path d="m0-9 4 12-4-2-4 2Z"/></g>
+        </svg><ol id="map-memory-list" class="map-memory-list" aria-label="Memory locations"></ol><div class="map-legend"><span><i class="player-key"></i>You</span><span><i class="warm-dot"></i>Safe lantern</span><span><i class="memory-key"></i>Recovered</span></div><p class="map-tip">Game paused while this map is open.<br>Recover all four, then return to the plaza gate.</p>
+      </aside>
+
+      <div id="touch-controls" class="touch-controls" hidden aria-label="Touch controls"><div class="move-pad"><button id="touch-sprint" class="touch-sprint" aria-label="Hold while moving to sprint">Sprint</button><button data-direction="forward" aria-label="Walk forward">↑</button><button data-direction="left" aria-label="Walk left">←</button><button data-direction="back" aria-label="Walk backward">↓</button><button data-direction="right" aria-label="Walk right">→</button></div><div class="touch-actions"><button id="touch-kick" class="touch-kick" aria-label="Kick zombie ahead">Kick</button><button id="touch-torch" aria-label="Toggle torch">Light</button><button id="touch-bell" aria-label="Ring decoy bell">Bell</button><button id="touch-interact" class="touch-interact" aria-label="Hold to interact">Hold E</button></div></div>
+
+      <section id="pause-screen" class="modal-screen" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden><div class="modal-copy"><p class="eyebrow">TAKE A BREATH</p><h2 id="pause-title">The night can wait.</h2><p>The campus is paused. Your memories are safe.</p><button id="resume-button" class="button primary">Continue exploring <span aria-hidden="true">↗</span></button><div class="pause-controls"><div><kbd>W A S D</kbd><span>Walk · arrows also work</span></div><div><kbd>Drag</kbd><span>Look around</span></div><div><kbd>E</kbd><span>Hold to perform a ritual</span></div><div><kbd>F</kbd><span>Toggle your torch</span></div><div><kbd>Shift</kbd><span>Outrun zombies · noise attracts the Listener</span></div><div><kbd>Space</kbd><span>Kick the zombie ahead to knock it down</span></div><div><kbd>Q</kbd><span>Ring a decoy bell</span></div><div><kbd>1 2 3</kbd><span>Play the residence notes</span></div><div><kbd>M</kbd><span>Open the campus map</span></div></div><div class="campus-modal-exits"><button id="pause-home-button" class="text-button">Return to title</button><a class="campus-return-link" href="/">Return to day tour<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M16 10H4m5-5-5 5 5 5"/></svg></a></div></div></section>
+      <section id="end-screen" class="modal-screen" role="dialog" aria-modal="true" aria-labelledby="end-title" hidden><div class="modal-copy end-copy"><p id="end-eyebrow" class="eyebrow">THE NIGHT ARCHIVE</p><h2 id="end-title">The campus remembers.</h2><p id="end-description"></p><div class="end-stats"><div><strong id="end-memories">4 / 4</strong><span>Memories returned</span></div><div><strong id="end-time">00:00</strong><span>Time in the night</span></div></div><button id="retry-button" class="button primary">Walk the night again <span aria-hidden="true">↗</span></button><div class="campus-modal-exits"><button id="end-home-button" class="text-button">Return to title</button><a class="campus-return-link" href="/">Return to day tour<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M16 10H4m5-5-5 5 5 5"/></svg></a></div></div></section>
+    </div>
+  </main>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,14 @@
+{
+  "name": "gbu-campus",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "start": "node server.mjs",
+    "verify": "node tools/verify-campus.mjs"
+  },
+  "engines": { "node": ">=22.12" },
+  "dependencies": {},
+  "devDependencies": { "three": "0.180.0", "vite": "7.3.6" }
+}

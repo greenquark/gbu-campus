@@ -1,0 +1,25 @@
+# Installed dependencies and generated builds
+node_modules/
+dist/
+/release/
+
+# Local snapshots and generated QA captures; retain written evidence.
+/Old/
+/artifacts/*
+!/artifacts/*.md
+!/artifacts/zombie-assets-20261003/
+/artifacts/zombie-assets-20261003/*
+!/artifacts/zombie-assets-20261003/*.md
+
+# Local credentials, environment settings and logs
+.env
+.env.*
+!.env.example
+.npmrc
+.railway/
+*.log
+*.pem
+*.key
+__pycache__/
+.DS_Store
+Thumbs.db

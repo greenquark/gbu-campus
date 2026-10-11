@@ -1,0 +1,11 @@
+**
+!package.json
+!server.mjs
+!Dockerfile
+!dist/
+!dist/**
+dist/**/.*
+dist/**/*.map
+dist/**/src/
+dist/**/tools/
+dist/**/node_modules/
