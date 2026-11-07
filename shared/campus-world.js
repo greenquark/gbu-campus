@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CAMPUS } from './campus-layout.js';
+import { squareWindowCenters, dormWindowLayout } from './window-layout.js';
 
 // Model-relative reconstruction. Geometry is purposefully independent of collision.
 // IMG_5355 / IMG_5354 set adjacency; the photograph set sets the facade vocabulary.
@@ -106,6 +107,20 @@ export function build(scene, renderer, {night = false, onProgress = () => {}} = 
     for(let xx=x-w/2;xx<=x+w/2+.01;xx+=spacing)box(xx,bottom+h/2,z+.09,.075,h,.075,m.darkFrame);
     for(let yy=bottom;yy<=bottom+h;yy+=2.7)box(x,yy,z+.1,w,.075,.07,m.darkFrame);
   }
+  function squareWindow(x,y,z,size,glass=m.glass,axis='z',side=1) {
+    const frame=.10, depth=.10;
+    const piece=(u,v,w,h,mat,offset=0)=> axis==='z'
+      ? box(x+u,y+v,z+side*offset,w,h,depth,mat)
+      : box(x+side*offset,y+v,z+u,depth,h,w,mat);
+    piece(0,0,size-frame*2,size-frame*2,glass);
+    for(const sign of [-1,1]){
+      piece(sign*(size-frame)/2,0,frame,size,m.whiteTrim,.07);
+      piece(0,sign*(size-frame)/2,size-frame*2,frame,m.whiteTrim,.07);
+    }
+  }
+  function squareFacade(x,y,z,width,height,axis='z',side=1) {
+    for(const p of squareWindowCenters(width,height))squareWindow(x+(axis==='z'?p.x:0),y+p.y,z+(axis==='x'?p.x:0),p.size,m.glass,axis,side);
+  }
   function parapet(x,z,w,d,y){box(x,y,z-d/2,w,.6,.2,m.porcelain);box(x,y,z+d/2,w,.6,.2,m.porcelain);for(const s of [-1,1])box(x+s*w/2,y,z,.2,.6,d,m.porcelain);}
 
   onProgress('Tracing the model paths',.08);
@@ -183,9 +198,12 @@ export function build(scene, renderer, {night = false, onProgress = () => {}} = 
     }else{box(x,2.4,z,w,4.8,d,m.glass);obstacle(x,z,w,d,'academic');}
     // Piers carry the elevated louvered volume and leave the central entry open.
     for(let dx=-w/2+1;dx<w/2;dx+=4.9){if(open&&Math.abs(dx)<3.2)continue;box(x+dx,2.8,front-.6,.55,5.6,.7,m.porcelain);if(open)obstacle(x+dx,front-.6,.65,.8,'teaching-pier');}
-    box(x,(h+5.7)/2,z,w,h-5.7,d,m.glass);
-    for(let y=5.65;y<h+.1;y+=.78){box(x,y,front+.32,w+.7,.19,.60,m.porcelain);box(x,y,back-.3,w+.7,.19,.56,m.porcelain);for(const s of [-1,1])box(x+s*(w/2+.30),y,z,.58,.19,d,m.porcelain);}
-    for(let dx=-w/2+.4;dx<w/2;dx+=2.7)box(x+dx,(h+5.7)/2,front+.10,.075,h-5.5,.085,m.darkFrame);
+    // Upper walls provide opaque backing; square panes sit outside, not in the collision model.
+    box(x,(h+5.7)/2,z,w,h-5.7,d,m.porcelain);
+    for(const side of [-1,1]){
+      squareFacade(x,(h+5.7)/2,z+side*(d/2+.12),w,h-5.7,'z',side);
+      squareFacade(x+side*(w/2+.12),(h+5.7)/2,z,d,h-5.7,'x',side);
+    }
     box(x,h+.22,z,w+.9,.5,d+.9,m.porcelain);parapet(x,z,w,d,h+.75);
     if(stepped){box(x-3,h+2.8,z-2,w*.61,4.7,d*.54,m.porcelain);windowGrid(x-3,z+d*.27-2+.05,w*.56,2.2,h+2);parapet(x-3,z-2,w*.61,d*.54,h+5.35);}
     return {front,back};
@@ -242,7 +260,10 @@ export function build(scene, renderer, {night = false, onProgress = () => {}} = 
         const xx=x-7.5+col*3,isOrange=(col===3&&floor>=4)||(floor===2&&col<3);
         if(isOrange){box(xx,y+fh/2,z+d/2-.55,2.55,fh-.32,.12,m.orange);box(xx,y+.18,z+d/2-.04,2.58,.10,1.30,m.orange);}
         else {box(xx,y+.85,z+d/2+.77,2.58,.74,.12,m.joint);for(const off of [.53,.79,1.05])box(xx,y+off,z+d/2+.86,2.6,.045,.05,m.darkFrame);}
-        if(night&&!isOrange&&(floor*7+col*5+x)%9<2)box(xx,y+fh*.66,z+d/2-.12,1.5,.74,.07,m.litGlass);
+        const lit=night&&!isOrange&&(floor*7+col*5+x)%9<2;
+        // The front glazing ends at z+d/2-1.4; panes sit forward of it, behind balconies.
+        const pane=dormWindowLayout(fh,isOrange);
+        squareWindow(xx,y+pane.y,z+d/2+pane.depth,pane.size,lit?m.litGlass:m.glass);
       }
     }
     for(const dx of [-8,-3,3,8]){box(x+dx,1.75,z+d/2-1,.40,3.5,.6,m.porcelain);obstacle(x+dx,z+d/2-1,.5,.7,'dorm-pier');}
