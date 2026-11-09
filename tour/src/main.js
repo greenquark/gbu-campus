@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createWorld } from './world.js';
+import { createMouseLook } from '../../shared/mouse-look.js';
 import './style.css';
 
 const $=id=>document.getElementById(id), canvas=$('world');
@@ -14,7 +15,7 @@ const places={
 };
 const placeOrder=Object.keys(places);
 let renderer,world,ready=false,mode='welcome',paused=false,shotPaused=false;
-let reduced=matchMedia('(prefers-reduced-motion: reduce)').matches, sensitivity=1,quality='balanced';
+let reduced=matchMedia('(prefers-reduced-motion: reduce)').matches, sensitivity=1, lookMode='drag',quality='balanced';
 let tourTime=0,tourDone=false,elapsed=0,lastTime=performance.now(),activePlace='plaza',transitionId=0;
 let yaw=0,pitch=0,targetYaw=0,targetPitch=0,drag=null,toastTimer;
 const keys=new Set(),touchMove=new Set(),velocity=new THREE.Vector2();
@@ -38,6 +39,7 @@ function locationUI(place){if(activePlace===place)return;activePlace=place;const
 function syncUI(){
   const entered=mode!=='welcome';$('welcome').hidden=entered;
   for(const id of ['location-note','places','visit-controls','gesture-hint'])$(id).hidden=!entered;
+  $('gesture-hint').textContent=lookMode==='follow'?'W A S D to walk · click the scene, then move the mouse to look · Esc releases the cursor':'W A S D to walk · drag to look · Esc to pause';
   $('touch-controls').hidden=!entered||!(small()||matchMedia('(pointer:coarse)').matches);
   const b=$('tour-toggle');b.textContent=paused?'Resume visit':mode==='tour'?'Pause visit':reduced?'Visit next landmark':'Guided visit';
   b.setAttribute('aria-pressed',String(mode==='tour'&&!paused));
@@ -50,7 +52,7 @@ async function transitionTo(position,target){
   setView(position,target);$('scene-fade').classList.remove('active');return true;
 }
 async function visit(place,{instant=false}={}){
-  if(!ready)return;mode='walk';paused=false;tourDone=false;clearInput();locationUI(place);syncUI();
+  if(!ready)return;mode='walk';paused=false;tourDone=false;mouseLook.release();clearInput();locationUI(place);syncUI();
   const view=places[place];
   if(instant){transitionId++;$('scene-fade').classList.remove('active');setView(view.position,view.target);}
   else await transitionTo(view.position,view.target);
@@ -58,11 +60,11 @@ async function visit(place,{instant=false}={}){
 }
 async function beginTour(){
   if(!ready)return;if(reduced){await visit(mode==='welcome'?'plaza':placeOrder[(placeOrder.indexOf(activePlace)+1)%placeOrder.length]);announce('Camera motion is reduced. Choose a place to continue.');return;}
-  mode='walk';paused=false;tourTime=0;tourDone=false;locationUI('plaza');syncUI();
+  mode='walk';paused=false;tourTime=0;tourDone=false;mouseLook.release();locationUI('plaza');syncUI();
   if(!await transitionTo(places.plaza.position,places.plaza.target))return;mode='tour';syncUI();canvas.focus({preventScroll:true});announce('A walk through the model-based campus. Move or drag to take over.');
 }
 function takeOver(){if(mode==='tour'){mode='walk';paused=false;syncUI();announce('You’re in control. Explore at your own pace.');}if(paused){paused=false;syncUI();$('visit-status').hidden=true;}}
-function togglePause(){if(mode==='welcome'||!ready)return;paused=!paused;clearInput();syncUI();if(paused)announce('Visit paused. Press Esc or Resume visit to continue.',true);else $('visit-status').hidden=true;}
+function togglePause(){if(mode==='welcome'||!ready)return;paused=!paused;if(paused)mouseLook.release();clearInput();syncUI();if(paused)announce('Visit paused. Press Esc or Resume visit to continue.',true);else $('visit-status').hidden=true;}
 
 const audio={context:null,master:null,wind:null,on:false,distance:0,sources:new Set(),generation:0,
   async toggle(){
@@ -76,8 +78,8 @@ const audio={context:null,master:null,wind:null,on:false,distance:0,sources:new 
   pause(value){if(this.pauseState===value)return;this.pauseState=value;if(this.context)this.master.gain.setTargetAtTime(this.on&&!value?.055:0,this.context.currentTime,.2);},
   dispose(){this.generation++;this.on=false;this.pauseState=null;this.distance=0;const ctx=this.context;if(this.master&&ctx){this.master.gain.cancelScheduledValues(ctx.currentTime);this.master.gain.setValueAtTime(0,ctx.currentTime);}for(const node of [this.wind,...this.sources]){try{node?.stop();node?.disconnect();}catch{}}this.sources.clear();this.master?.disconnect();this.wind=null;this.master=null;this.context=null;if(ctx&&ctx.state!=='closed')void ctx.close().catch(()=>{});$('sound').setAttribute('aria-pressed','false');$('sound').setAttribute('aria-label','Turn ambience on');}
 };
-addEventListener('pagehide',()=>{clearInput();paused=true;audio.dispose();});
-addEventListener('beforeunload',()=>{clearInput();paused=true;audio.dispose();if(ready)syncUI();});
+addEventListener('pagehide',()=>{mouseLook.release();clearInput();paused=true;audio.dispose();});
+addEventListener('beforeunload',()=>{mouseLook.release();clearInput();paused=true;audio.dispose();if(ready)syncUI();});
 addEventListener('pageshow',event=>{if(event.persisted){lastTime=performance.now();syncUI();}});
 if(import.meta.hot)import.meta.hot.dispose(()=>audio.dispose());
 
@@ -88,16 +90,39 @@ $('retry').addEventListener('click',()=>location.reload());
 document.querySelectorAll('[data-place]').forEach(b=>b.addEventListener('click',()=>visit(b.dataset.place)));
 const dialogs=[$('help-dialog'),$('settings-dialog')];
 const dialogReturn=new WeakMap();
-function openDialog(id){const dialog=$(id);dialogReturn.set(dialog,{paused,focus:document.activeElement});clearInput();if(mode!=='welcome')paused=true;syncUI();audio.pause(true);dialog.showModal();}
+function openDialog(id){const dialog=$(id);dialogReturn.set(dialog,{paused,focus:document.activeElement});clearInput();if(mode!=='welcome')paused=true;mouseLook.release();syncUI();audio.pause(true);dialog.showModal();}
 $('help').addEventListener('click',()=>openDialog('help-dialog'));$('settings').addEventListener('click',()=>openDialog('settings-dialog'));
 document.querySelectorAll('.close-dialog').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));
 dialogs.forEach(d=>d.addEventListener('close',()=>{const previous=dialogReturn.get(d);if(!previous)return;dialogReturn.delete(d);clearInput();paused=previous.paused;syncUI();audio.pause(paused);if(previous.focus?.isConnected)previous.focus.focus({preventScroll:true});}));
 $('quality').value=quality;$('quality').addEventListener('change',e=>{quality=e.target.value;applyQuality();});
 $('reduced-motion').checked=reduced;$('reduced-motion').addEventListener('change',e=>{reduced=e.target.checked;if(reduced&&mode==='tour'){mode='walk';tourDone=false;}syncUI();});
+$('look-mode').value=lookMode;$('look-mode').addEventListener('change',e=>setLookMode(e.target.value));
+if(matchMedia('(pointer:coarse)').matches){const follow=$('look-mode').querySelector('option[value="follow"]');if(follow){follow.disabled=true;follow.textContent='Mouse follow (needs a mouse)';}}
 $('sensitivity').addEventListener('input',e=>sensitivity=Number(e.target.value));
 $('sound').addEventListener('click',()=>audio.toggle().catch(()=>announce('Ambience could not start. Try the sound button again.')));
 $('fullscreen').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('experience').requestFullscreen();}catch{announce('Fullscreen is unavailable. You can still explore here.');}});
 document.addEventListener('fullscreenchange',()=>$('fullscreen').setAttribute('aria-label',document.fullscreenElement?'Exit fullscreen':'Enter fullscreen'));
+
+const mouseLook=createMouseLook({element:canvas,
+  onDelta:(dx,dy)=>{
+    // Pointer-lock look is exclusive: it only runs while the visit is live and unfrozen.
+    if(lookMode!=='follow'||mode==='welcome'||paused||dialogs.some(d=>d.open))return;
+    targetYaw-=dx*.003*sensitivity;targetPitch-=dy*.0025*sensitivity;targetPitch=THREE.MathUtils.clamp(targetPitch,-.65,.9);
+  },
+  onStatus:(state,detail)=>{
+    if(state==='locked')announce('Mouse follow on. Move the mouse to look; press Esc to release the cursor.',true);
+    else if(state==='unlocked'&&mode!=='welcome'&&!paused&&!dialogs.some(d=>d.open))announce('Mouse released. Click the scene to capture it again, or press Esc to pause.');
+    else if(state==='failed'){const reason=detail&&(detail.name||detail.message)?` (${detail.name||detail.message})`:'';announce(`Mouse follow could not start${reason}. Click the window first, then the scene; drag to look still works.`);}
+    else if(state==='unavailable')announce('Mouse follow is unavailable in this browser. Drag to look still works.');
+  }
+});
+function setLookMode(value){
+  const next=value==='follow'?'follow':'drag';
+  if(next===lookMode)return;
+  lookMode=next;$('look-mode').value=lookMode;
+  mouseLook.release();clearInput();syncUI();
+  if(mode!=='welcome')announce(lookMode==='follow'?'Mouse follow selected. Click the scene to capture the mouse.':'Drag to look selected. Q and E turn the camera again.');
+}
 
 addEventListener('keydown',e=>{
   if(dialogs.some(d=>d.open))return;if(e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement)return;
@@ -106,9 +131,12 @@ addEventListener('keydown',e=>{
   if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','q','e','shift'].includes(k)){e.preventDefault();takeOver();keys.add(k);}
 });
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-addEventListener('blur',clearInput);
-document.addEventListener('visibilitychange',()=>{clearInput();if(document.hidden&&mode!=='welcome'){paused=true;syncUI();}audio.pause(document.hidden||paused);});
-canvas.addEventListener('pointerdown',e=>{if(mode==='welcome'||!ready||e.button!==0)return;takeOver();drag={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);canvas.focus({preventScroll:true});});
+addEventListener('blur',()=>{clearInput();mouseLook.release();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)mouseLook.release();clearInput();if(document.hidden&&mode!=='welcome'){paused=true;syncUI();}audio.pause(document.hidden||paused);});
+canvas.addEventListener('pointerdown',e=>{if(mode==='welcome'||!ready||e.button!==0)return;takeOver();canvas.focus({preventScroll:true});
+  // Follow mode captures the mouse; touch keeps the original drag so phones stay usable.
+  if(lookMode==='follow'&&e.pointerType!=='touch'){mouseLook.request();return;}
+  drag={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});
 canvas.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;targetYaw-=(e.clientX-drag.x)*.003*sensitivity;targetPitch-=(e.clientY-drag.y)*.0025*sensitivity;targetPitch=THREE.MathUtils.clamp(targetPitch,-.65,.9);drag.x=e.clientX;drag.y=e.clientY;});
 for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,()=>drag=null);
 for(const b of document.querySelectorAll('[data-move]')){
@@ -122,7 +150,7 @@ function canMove(x,z){const b=world.bounds;return x>b.minX+.4&&x<b.maxX-.4&&z>b.
 function walk(dt){
   const forward=Number(keys.has('w')||keys.has('arrowup')||touchMove.has('forward'))-Number(keys.has('s')||keys.has('arrowdown')||touchMove.has('back'));
   const side=Number(keys.has('d')||keys.has('arrowright')||touchMove.has('right'))-Number(keys.has('a')||keys.has('arrowleft')||touchMove.has('left'));
-  targetYaw+=(Number(keys.has('q'))-Number(keys.has('e')))*dt*1.25;
+  if(lookMode!=='follow')targetYaw+=(Number(keys.has('q'))-Number(keys.has('e')))*dt*1.25;
   const length=Math.hypot(forward,side)||1,speed=keys.has('shift')?7.1:4.25;
   const vx=(-Math.sin(yaw)*forward+Math.cos(yaw)*side)/length*speed,vz=(-Math.cos(yaw)*forward-Math.sin(yaw)*side)/length*speed;
   velocity.x=THREE.MathUtils.damp(velocity.x,vx,12,dt);velocity.y=THREE.MathUtils.damp(velocity.y,vz,12,dt);
@@ -162,7 +190,7 @@ async function init(){
   }catch(error){console.error('Campus visit could not initialize',error);$('loading').hidden=true;$('load-error').hidden=false;$('start-tour').hidden=true;$('start-walk').hidden=true;}
 }
 function installDiagnostics(){
-  window.__THREE_GAME_DIAGNOSTICS__={renderer:renderer.info,get state(){return{ready,mode,paused,activePlace,audio:{on:audio.on,contextState:audio.context?.state??"closed",sources:audio.sources.size+(audio.wind?1:0),gain:audio.master?.gain.value??0},position:camera.position.toArray(),tourTime,quality,world:world.diagnostics||null,frameTimeMs:frameMs.length?frameMs.reduce((a,b)=>a+b,0)/frameMs.length:null,physics:{engine:'custom bounded walk',timestep:'substeps <= 16ms',ccdBodies:0}};}};
+  window.__THREE_GAME_DIAGNOSTICS__={renderer:renderer.info,get state(){return{ready,mode,paused,activePlace,audio:{on:audio.on,contextState:audio.context?.state??"closed",sources:audio.sources.size+(audio.wind?1:0),gain:audio.master?.gain.value??0},position:camera.position.toArray(),yaw,pitch,lookMode,pointerLocked:mouseLook.isLocked(),tourTime,quality,world:world.diagnostics||null,frameTimeMs:frameMs.length?frameMs.reduce((a,b)=>a+b,0)/frameMs.length:null,physics:{engine:'custom bounded walk',timestep:'substeps <= 16ms',ccdBodies:0}};}};
   window.__THREE_GAME_TEST_HOOKS__={
     async setState(name){if(!['welcome',...placeOrder,'settings'].includes(name))throw new Error(`Unknown state: ${name}`);dialogs.forEach(d=>d.close());clearInput();shotPaused=false;paused=false;elapsed=0;if(name==='welcome'){mode='welcome';overview();syncUI();}else{await visit(name==='settings'?'plaza':name,{instant:true});if(name==='settings')openDialog('settings-dialog');}$('visit-status').hidden=true;world.update(.1,0,camera.position);renderer.info.reset();renderer.render(scene,camera);return{state:name};},
     setPausedForScreenshot(value){shotPaused=Boolean(value);clearInput();},setReducedMotion(value){reduced=Boolean(value);$('reduced-motion').checked=reduced;syncUI();}

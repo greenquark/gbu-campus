@@ -40,6 +40,21 @@ The launcher starts/checks the server on that port and opens http://127.0.0.1:52
 
 The original development checkout uses a junction to local Three.js/Vite dependencies; do not delete that node_modules junction recursively. Fresh checkouts create their own dependencies with `npm ci`.
 
+## Mouse look (fork change)
+
+This fork adds an optional mouse-look camera for players used to online-game controls. The change is local to the client: no new server endpoints, no new assets and no new dependencies.
+
+- **Day tour:** open **Settings**, set **Mouse look** to *Mouse follow*, then click the scene to capture the pointer. Move the mouse to look and press **Esc** to release the cursor. Choosing *Drag to look* returns to the original drag look and `Q` / `E` turning.
+- **Haunted night:** open the pause screen (**Esc** or the pause button) and set **Mouse look** the same way. The sensitivity slider sits next to it.
+- **Sensitivity** (0.5–2) applies to both drag and mouse follow, so the same setting keeps working whichever mode is selected.
+- The two look systems never run together. In follow mode the original pointer drag and the day tour's `Q` / `E` turning are suspended, while `W` `A` `S` `D` walking, `Shift` sprinting, the night game's arrow-key movement and every other action keep working. Switching back restores the original controls.
+- Touch screens keep the original drag gestures: mouse follow needs a mouse or trackpad and the option is disabled for coarse pointers. A touch drag in follow mode still looks around.
+- Pointer capture and held keys are released when the game pauses, opens the map or settings, loses focus, is hidden, changes mode, ends, or the page unloads.
+
+Known limits: pressing `Esc` while the pointer is captured releases the cursor first, so a second `Esc` is what pauses the visit or the night. A browser that refuses pointer lock (document not focused, or the user just exited a lock) shows a short recovery message instead of failing silently. This fork's mouse look has been checked in desktop Chromium only; it has not been tested on a physical phone or with assistive pointer hardware.
+
+Deployment: the original project publishes from a separate hosting repository that rewrites paths to `/world/`. Pushing this fork does not deploy it — a fork needs its own Pages workflow (or any static host) with a matching base path, and both `/` and `/night/` bundles must be built together with `npm run build`.
+
 The Git repository includes `tour/`, `night/`, `shared/`, source assets, build/server tools and written evidence. Generated `dist/` and `release/`, dependencies, local `Old/` snapshots, screenshots, recordings and raw QA results are excluded. Evidence documents describe historical runs; their local capture paths are not included in this source repository.
 
 ## GitHub Pages hosting

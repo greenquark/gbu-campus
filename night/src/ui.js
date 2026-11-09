@@ -31,7 +31,7 @@ function drawCampusMap() {
 
 export function createUI(actions) {
   drawCampusMap();
-  const ids = ['ui','title-screen','start-button','demo-button','loading','loading-label','loading-progress','hud','objective','hint','navigation-label','track-status','track-progress','track-clock','memory-count','memory-list','safety-label','health-fill','health-value','bite-effect','chase-label','kick-label','composure-fill','composure-value','battery-fill','battery-value','torch-label','noise-label','noise-bars','bell-label','reticle','event-message','focus-prompt','focus-title','focus-instruction','ritual-progress','note-controls','demo-strip','demo-caption','map-panel','map-player','map-ghost','map-target','map-button','pause-screen','end-screen','end-eyebrow','end-title','end-description','end-memories','end-time','retry-button','sound-button','quality-label','touch-controls','touch-torch','touch-interact','touch-kick','touch-sprint','scene'];
+  const ids = ['ui','title-screen','start-button','demo-button','loading','loading-label','loading-progress','hud','objective','hint','navigation-label','track-status','track-progress','track-clock','memory-count','memory-list','safety-label','health-fill','health-value','bite-effect','chase-label','kick-label','composure-fill','composure-value','battery-fill','battery-value','torch-label','noise-label','noise-bars','bell-label','reticle','event-message','focus-prompt','focus-title','focus-instruction','ritual-progress','note-controls','demo-strip','demo-caption','map-panel','map-player','map-ghost','map-target','map-button','pause-screen','end-screen','end-eyebrow','end-title','end-description','end-memories','end-time','retry-button','sound-button','quality-label','touch-controls','touch-torch','touch-interact','touch-kick','touch-sprint','look-hint','scene'];
   const el = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
   const cache = new WeakMap();
   let lastMode = null;
@@ -116,7 +116,7 @@ export function createUI(actions) {
     if (event.key !== 'Tab') return;
     const panel = state.mapOpen ? el['map-panel'] : state.mode === 'paused' ? el['pause-screen'] : ['won','lost'].includes(state.mode) ? el['end-screen'] : null;
     if (!panel) return;
-    const controls = [...panel.querySelectorAll('button:not([disabled]),a[href]')];
+    const controls = [...panel.querySelectorAll('button:not([disabled]),a[href],input,select')];
     const first = controls[0], last = controls.at(-1);
     if (event.shiftKey && (!panel.contains(document.activeElement) || document.activeElement === first)) { event.preventDefault(); last?.focus(); }
     else if (!event.shiftKey && (!panel.contains(document.activeElement) || document.activeElement === last)) { event.preventDefault(); first?.focus(); }
@@ -199,6 +199,7 @@ export function createUI(actions) {
     attr(el['noise-bars'], 'aria-label', `Noise ${Math.round(noise * 100)} percent`);
     text(el['bell-label'], next.decoyCooldown > 0 ? `Bell returns in ${Math.ceil(next.decoyCooldown)}s` : 'Decoy bell ready');
     text(el['quality-label'], next.quality || 'Smooth');
+    text(el['look-hint'], next.lookMode === 'follow' ? 'mouse look' : 'drag to look');
     attr(document.getElementById('quality-button'), 'aria-label', `Rendering: ${next.quality || 'Smooth'}. Click to change.`);
     attr(el['sound-button'], 'aria-pressed', Boolean(next.sound));
     attr(el['sound-button'], 'aria-label', next.sound ? 'Mute sound' : 'Enable sound');

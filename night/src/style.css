@@ -73,3 +73,12 @@
 
 /* A route diagram must remain readable over objectives and moving facades. */
 .map-panel{background:rgba(10,29,35,.98)}
+
+/* Mouse look settings live inside the pause screen so they stay reachable mid-run. */
+.pause-settings{margin:18px auto 0;width:min(345px,100%);border-top:1px solid var(--edge);padding-top:16px;display:grid;gap:14px;text-align:left}
+.pause-setting{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:10px;color:var(--muted)}
+.pause-setting>span{display:block;min-width:0}
+.pause-setting small{display:block;font-size:9px;line-height:1.45;color:var(--muted);opacity:.82;margin-top:4px}
+.pause-setting select{flex:none;max-width:132px;padding:7px 8px;background:#0f272b;border:1px solid var(--edge);color:var(--ivory);font:inherit;font-size:10px}
+.pause-setting input[type=range]{flex:none;width:112px;accent-color:var(--amber)}
+@media(max-width:520px){.pause-setting{flex-direction:column;align-items:flex-start;gap:8px}.pause-setting select,.pause-setting input[type=range]{width:100%;max-width:none}}

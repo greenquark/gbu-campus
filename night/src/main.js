@@ -5,13 +5,14 @@ import {createAudio} from './audio.js';
 import {CampusGame,clamp,distance,TITLES} from './game.js';
 import {DemoPlayer} from './demo.js';
 import {createZombieVisuals} from './zombie-visuals.js';
+import {createMouseLook} from '../../shared/mouse-look.js';
 import {CAMPUS} from '../../shared/campus-layout.js';
 import './style.css';
 
 const root=document.querySelector('#scene'),audio=createAudio();
 let ready=false,game,world,demo=null,mode='title',quality='Smooth',sound=true,mapOpen=false,frame=0;
 let renderScale=.8,last=0,accumulator=0,uiClock=0,adaptClock=0,elapsed=0,freeze=false,reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
-let fps=60,frames=[],frameMetrics={mean:16.7,p95:16.7},drag=null,stepBob=0,qualityWarmup=8;
+let fps=60,frames=[],frameMetrics={mean:16.7,p95:16.7},drag=null,stepBob=0,qualityWarmup=8,lookMode='drag',sensitivity=1;
 const key=new Set(),touch={x:0,z:0,interact:false,run:false},lookVector=new THREE.Vector3(),moonColor=new THREE.Color(0xa9cfdf);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x172c3d);scene.fog=new THREE.Fog(0x243b47,80,355);
 const camera=new THREE.PerspectiveCamera(67,innerWidth/innerHeight,.08,600);camera.rotation.order='YXZ';scene.add(camera);
@@ -41,7 +42,7 @@ const ring=new THREE.Mesh(new THREE.RingGeometry(.8,1.12,24),new THREE.MeshBasic
 const bellVisual=new THREE.Mesh(new THREE.OctahedronGeometry(.22),new THREE.MeshBasicMaterial({color:0xffce87}));scene.add(bellVisual);bellVisual.visible=false;
 const zombieVisuals=createZombieVisuals(scene,camera);
 
-function clearInput(){key.clear();touch.x=0;touch.z=0;touch.interact=false;touch.run=false;drag=null;}
+function clearInput(){key.clear();touch.x=0;touch.z=0;touch.interact=false;touch.run=false;drag=null;mouseLook.release();}
 function begin(isDemo=false,keep=false){if(!ready)return;audio.stopSession();audio.beginSession();clearInput();game.reset(keep);demo=isDemo?new DemoPlayer(game,{portrait:innerWidth/innerHeight<.8}):null;mode='playing';mapOpen=false;freeze=false;qualityWarmup=4;hemi.intensity=2.15;scene.background.set(0x172c3d);scene.fog.color.set(0x243b47);updateUI();}
 function pause(){if(mode==='playing'){mapOpen=false;mode='paused';game.mode='paused';audio.setPaused(true);clearInput();updateUI();}else if(mode==='paused')resume();}
 function resume(){if(mode!=='paused')return;mode='playing';game.mode='playing';clearInput();updateUI();audio.beginSession();audio.setPaused(false);}
@@ -50,7 +51,26 @@ function takeover(){if(!demo)return;demo=null;clearInput();game.say('You are in 
 const ui=createUI({start:()=>begin(false),demo:()=>begin(true),resume,retry:()=>begin(false,mode==='lost'),home:()=>{audio.stopSession();mode='title';if(game)game.mode='title';demo=null;clearInput();updateUI();},takeControl:takeover,
   toggleSound:()=>{sound=!sound;audio.setEnabled(sound);updateUI();},toggleQuality:()=>{quality=quality==='Smooth'?'Detail':'Smooth';renderScale=quality==='Smooth'?.8:1;resize();adaptClock=0;updateUI();},
   toggleMap,toggleTorch:()=>{if(!mapOpen)game?.toggleTorch();},decoy:()=>{if(!mapOpen)game?.ringBell();},kick:()=>{if(!mapOpen)game?.pressKick();},sprint:v=>{touch.run=!mapOpen&&v;},interact:(v)=>{if(v&&!touch.interact&&!mapOpen)game?.pressInteract();touch.interact=!mapOpen&&v;},note:n=>{if(!mapOpen)game?.note(n);},move:(x,z)=>{touch.x=mapOpen?0:x;touch.z=mapOpen?0:z;},look:(dx,dy)=>look(dx,dy),pause});
-function look(dx,dy){if(mode!=='playing'||mapOpen||demo||freeze)return;game.player.yaw-=dx*.0028;game.player.pitch=clamp(game.player.pitch-dy*.0028,-1.12,1.12);}
+function look(dx,dy){if(mode!=='playing'||mapOpen||demo||freeze)return;game.player.yaw-=dx*.0028*sensitivity;game.player.pitch=clamp(game.player.pitch-dy*.0028*sensitivity,-1.12,1.12);}
+const mouseLook=createMouseLook({element:renderer.domElement,
+  onDelta:(dx,dy)=>look(dx,dy),
+  onStatus:(state,detail)=>{
+    if(!game)return;
+    if(state==='locked')game.say('Mouse follow on. Move the mouse to look; Esc releases the cursor.',5);
+    else if(state==='unlocked'&&mode==='playing'&&!mapOpen&&!demo)game.say('Mouse released. Click the scene to capture it again; Esc pauses the night.',5);
+    else if(state==='failed'){const reason=detail&&(detail.name||detail.message)?` (${detail.name||detail.message})`:'';game.say(`Mouse follow could not start${reason}. Click the window first, then the scene; drag to look still works.`,7);}
+    else if(state==='unavailable')game.say('Mouse follow is unavailable in this browser. Drag to look still works.',6);
+  }
+});
+function setLookMode(value){
+  const next=value==='follow'?'follow':'drag';
+  if(next===lookMode)return;
+  lookMode=next;clearInput();
+  const select=document.getElementById('night-look-mode');if(select)select.value=lookMode;
+  if(game&&mode==='playing')game.say(lookMode==='follow'?'Mouse follow selected. Click the scene to capture the mouse.':'Drag to look selected.',5);
+  updateUI();
+}
+
 const consumed=new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyE','KeyF','KeyQ','KeyM','Escape','Digit1','Digit2','Digit3']);
 addEventListener('keydown',e=>{
   if((e.code==='Space'||e.code==='Enter')&&e.target.closest?.('button,a,input,select,textarea'))return;
@@ -73,13 +93,16 @@ addEventListener('pagehide',event=>{
 addEventListener('beforeunload',()=>{if(mode==='playing')pause();audio.stopSession();});
 addEventListener('pageshow',event=>{if(event.persisted){last=0;updateUI();}});
 if(import.meta.hot)import.meta.hot.dispose(()=>audio.dispose());
-renderer.domElement.addEventListener('pointerdown',e=>{if(mode!=='playing'||mapOpen||demo)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY};renderer.domElement.setPointerCapture(e.pointerId);audio.unlock();});
+renderer.domElement.addEventListener('pointerdown',e=>{if(mode!=='playing'||mapOpen||demo)return;audio.unlock();
+  // Follow mode captures the mouse; touch keeps the original drag so phones stay usable.
+  if(lookMode==='follow'&&e.pointerType!=='touch'){mouseLook.request();return;}
+  drag={id:e.pointerId,x:e.clientX,y:e.clientY};renderer.domElement.setPointerCapture(e.pointerId);});
 renderer.domElement.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;look(e.clientX-drag.x,e.clientY-drag.y);drag.x=e.clientX;drag.y=e.clientY;});
 for(const name of ['pointerup','pointercancel','lostpointercapture'])renderer.domElement.addEventListener(name,()=>drag=null);
 function resize(){renderer.setPixelRatio(Math.min(devicePixelRatio,quality==='Detail'?1.25:renderScale));renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}addEventListener('resize',resize);
 function input(){return {x:touch.x+(key.has('KeyD')||key.has('ArrowRight')?1:0)-(key.has('KeyA')||key.has('ArrowLeft')?1:0),z:touch.z+(key.has('KeyW')||key.has('ArrowUp')?1:0)-(key.has('KeyS')||key.has('ArrowDown')?1:0),run:touch.run||key.has('ShiftLeft')||key.has('ShiftRight'),interact:touch.interact||key.has('KeyE')};}
 function updateUI(){
-  const g=game;ui.update({ready,mode,demo:!!demo,title:'After the Last Bell',objective:g?.memories.length===4?'Return the memories to the plaza gate':'Recover four campus memories',hint:'M · Campus map. Follow the promenade, garden paths and rear arcade.',caption:demo?.caption||'',memories:CAMPUS.stations.map(s=>({id:s.id,title:s.title,done:g?.memories.includes(s.id)||false})),navigation:g?.navigation(),track:g?.track,focus:g?.focus||null,health:g?.health??100,biteFlash:g?.biteFlash??0,kickCooldown:g?.kickCooldown??0,chasers:g?.chasers??0,battery:g?.battery??100,fear:g?.fear??0,noise:g?.noise??0,torch:g?.torch??true,safe:g?.safe??false,time:g?.time??0,quality,sound,decoyCooldown:g?.decoyCooldown??0,mapOpen,player:g?.player||CAMPUS.spawn,ghost:{x:g?.ghost.x||0,z:g?.ghost.z||0,visible:g?.ghost.visible&&distance(g.player,g.ghost)<18},fps,message:g?.message||''});
+  const g=game;ui.update({ready,mode,demo:!!demo,lookMode,title:'After the Last Bell',objective:g?.memories.length===4?'Return the memories to the plaza gate':'Recover four campus memories',hint:'M · Campus map. Follow the promenade, garden paths and rear arcade.',caption:demo?.caption||'',memories:CAMPUS.stations.map(s=>({id:s.id,title:s.title,done:g?.memories.includes(s.id)||false})),navigation:g?.navigation(),track:g?.track,focus:g?.focus||null,health:g?.health??100,biteFlash:g?.biteFlash??0,kickCooldown:g?.kickCooldown??0,chasers:g?.chasers??0,battery:g?.battery??100,fear:g?.fear??0,noise:g?.noise??0,torch:g?.torch??true,safe:g?.safe??false,time:g?.time??0,quality,sound,decoyCooldown:g?.decoyCooldown??0,mapOpen,player:g?.player||CAMPUS.spawn,ghost:{x:g?.ghost.x||0,z:g?.ghost.z||0,visible:g?.ghost.visible&&distance(g.player,g.ghost)<18},fps,message:g?.message||''});
 }
 function updateView(dt){
   if(mode==='title'){
@@ -100,7 +123,7 @@ function updateView(dt){
   }
 }
 const debug=new URLSearchParams(location.search).has('debug');
-function diagnostics(){return {state:{ready,mode,demo:!!demo,memories:game?.memories||[],focus:game?.focus,player:game?{...game.player}:null,ghost:game?{...game.ghost}:null,health:game?.health,biteFlash:game?.biteFlash,kickTime:game?.kickTime,kickImpact:game?.kickImpact,kickCooldown:game?.kickCooldown,chasers:game?.chasers,combat:game?{...game.combat}:null,zombies:game?.zombies.map(({id,x,z,yaw,mode,phase,downTime,clock})=>({id,x,z,yaw,mode,phase,downTime,clock})),visuals:zombieVisuals.diagnostics,audio:audio.diagnostics?.(),battery:game?.battery,fear:game?.fear,time:game?.time,progress:game?.progress,track:game?.track,navigation:game?.navigation(),world:world?.diagnostics,starArmed:game?.starArmed,noteClock:game?.noteClock,sequence:game?.sequence,steps:game?.steps,demoStep:demo?.i},renderer:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,pixelRatio:renderer.getPixelRatio(),width:renderer.domElement.width,height:renderer.domElement.height},performance:{fps,meanFrameMs:frameMetrics.mean,p95FrameMs:frameMetrics.p95,samples:frames.length},physics:{engine:'custom AABB',step:1/60,colliders:world?.colliders.length||0,sensors:6,ccdBodies:0},frame};}
+function diagnostics(){return {state:{ready,mode,demo:!!demo,lookMode,pointerLocked:mouseLook.isLocked(),memories:game?.memories||[],focus:game?.focus,player:game?{...game.player}:null,ghost:game?{...game.ghost}:null,health:game?.health,biteFlash:game?.biteFlash,kickTime:game?.kickTime,kickImpact:game?.kickImpact,kickCooldown:game?.kickCooldown,chasers:game?.chasers,combat:game?{...game.combat}:null,zombies:game?.zombies.map(({id,x,z,yaw,mode,phase,downTime,clock})=>({id,x,z,yaw,mode,phase,downTime,clock})),visuals:zombieVisuals.diagnostics,audio:audio.diagnostics?.(),battery:game?.battery,fear:game?.fear,time:game?.time,progress:game?.progress,track:game?.track,navigation:game?.navigation(),world:world?.diagnostics,starArmed:game?.starArmed,noteClock:game?.noteClock,sequence:game?.sequence,steps:game?.steps,demoStep:demo?.i},renderer:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,pixelRatio:renderer.getPixelRatio(),width:renderer.domElement.width,height:renderer.domElement.height},performance:{fps,meanFrameMs:frameMetrics.mean,p95FrameMs:frameMetrics.p95,samples:frames.length},physics:{engine:'custom AABB',step:1/60,colliders:world?.colliders.length||0,sensors:6,ccdBodies:0},frame};}
 if(debug){
   Object.defineProperty(window,'__THREE_GAME_DIAGNOSTICS__',{get:diagnostics});
   window.__THREE_GAME_TEST_HOOKS__={seed:async()=>({seed:715}),getState:diagnostics,setReducedMotion:v=>{reducedMotion=v;},
@@ -161,6 +184,10 @@ function animate(now){requestAnimationFrame(animate);const raw=last?Math.min((no
   renderer.render(scene,camera);
 }
 requestAnimationFrame(animate);
+const lookModeSelect=document.getElementById('night-look-mode'),sensitivityInput=document.getElementById('night-sensitivity');
+if(lookModeSelect){lookModeSelect.value=lookMode;lookModeSelect.addEventListener('change',e=>setLookMode(e.target.value));}
+if(sensitivityInput){sensitivityInput.value=String(sensitivity);sensitivityInput.addEventListener('input',e=>sensitivity=Number(e.target.value)||1);}
+if(matchMedia('(pointer:coarse)').matches&&lookModeSelect){const follow=lookModeSelect.querySelector('option[value="follow"]');if(follow){follow.disabled=true;follow.textContent='Mouse follow (needs a mouse)';}}
 ui.setLoading('Opening the campus after dark',.05);updateUI();
 try{
   world=await createWorld(scene,renderer,(text,value)=>ui.setLoading(text,value));game=new CampusGame(world,audio);mode='title';game.mode='title';
