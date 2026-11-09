@@ -17,7 +17,23 @@ Night audio shuts down completely on victory, defeat, quit or exit. Pause, mute 
 
 ## Run locally
 
-For a fresh checkout, install Node 22.12 or newer, open a terminal in the repository root, then run:
+### 1. Check your environment and working directory
+
+Install **Node 22.12 or newer** (with npm). Open a terminal in your cloned repository, not in `tour/` or `night/`. The repository root contains `package.json`, `package-lock.json`, `server.mjs`, `tour/` and `night/`.
+
+```sh
+# If the terminal is in the parent directory, enter your clone first.
+# Replace gbu-campus with the actual folder name if different.
+cd gbu-campus
+node --version
+npm --version
+```
+
+Skip `cd gbu-campus` if already in the repository root. Check the full Node version: 22.11 does not meet the requirement, while 22.12 or a newer supported release does. If either version command is not found, install Node or fix your PATH, then reopen the terminal before continuing.
+
+### 2. Install, build and start
+
+Run each command separately from the repository root. If one fails, read its error and fix that step before continuing.
 
 ```sh
 npm ci
@@ -25,7 +41,46 @@ npm run build
 npm start
 ```
 
-Open http://127.0.0.1:5190/ for the day tour or http://127.0.0.1:5190/night/ for the night game. Run all commands from the repository root; the root build packages both modes together. Rebuild after changing source files. The completed build works without internet access. Fonts, geometry, materials and sound generation are local.
+| Command | What it does and why it is needed |
+|---|---|
+| `npm ci` | Installs the dependency versions recorded in `package-lock.json`, including Three.js and Vite. It replaces the checkout's existing `node_modules/`; do not run it against the original development junction mentioned below. A fresh installation normally needs network access. Preserve the lockfile rather than deleting it to bypass an error. |
+| `npm run build` | Runs `tools/build.mjs`. Vite builds both `tour/` and `night/`, and the script copies their required local assets. The browser-ready output is `dist/` for day and `dist/night/` for night. It also prepares generated release files; these are not your source files. |
+| `npm start` | Runs `server.mjs`, which loads the completed `dist/` into memory and serves it over HTTP. It requires both modes to have been built; it does not compile source files or start a hot-reloading development server. |
+
+On successful startup, the terminal prints `Campus experience is ready.` Keep this terminal running while using the site. The command remaining active is normal: it is waiting for browser requests. Press **Ctrl+C** in that terminal to stop it.
+
+### 3. Open the matching address
+
+With the default port, open these URLs in a browser on the **same machine as the server**:
+
+- Day tour: http://127.0.0.1:5190/
+- Haunted night: http://127.0.0.1:5190/night/
+
+Do not double-click source HTML files: the application needs the built JavaScript/assets and HTTP paths. The root build packages both modes together. After a successful installation and build, the completed local site works without internet access; fonts, geometry, materials and sound generation are local.
+
+**Remote workspace or container:** `127.0.0.1` always refers to the machine running the browser, not automatically to your workspace. If the server runs remotely, use your workspace platform's private/authenticated port forwarding for **5190** and open its generated URL. For night, use the forwarded site's `/night/` route. If the platform uses a path prefix, follow its routing instructions. If you set another `PORT`, forward that port instead. Running the server in a remote workspace does not start a server on your own laptop, and forwarding it does not publish an update to GitHub Pages.
+
+### 4. View source changes
+
+There is no automatic rebuild or hot reload in this workflow. After editing JavaScript, HTML or CSS:
+
+1. Stop the running server with **Ctrl+C**.
+2. Run `npm run build` and check that it succeeds for both modes.
+3. Run `npm start` again, then refresh the browser page.
+
+The restart matters because `server.mjs` reads the build into memory at startup; rebuilding on disk alone does not replace that running server's copy. A README-only edit does not change the game, so it does not itself require rebuilding. Re-run `npm ci` when dependencies/lockfile change or dependencies are missing, rather than for every text or style edit.
+
+### 5. Troubleshoot one step at a time
+
+| Symptom | What to check |
+|---|---|
+| npm cannot find `package.json` | Confirm the terminal is in the repository root, not its parent or a scene subfolder. |
+| Dependency download fails | Check network/proxy/registry settings and preserve the exact error. Fix installation before building; do not expose proxy credentials in shared logs. |
+| Startup fails | Confirm `npm run build` completed for both modes. The server requires `dist/index.html` and `dist/night/index.html`. Also check whether the chosen port is already occupied; see the port instructions below. |
+| Browser says connection refused | Keep the server terminal running and check the URL/port. If it is a remote workspace, check forwarding; your laptop's loopback address is not the workspace's. |
+| Source edits do not appear | Rebuild, restart the server and refresh as described above. Confirm you opened the local/forwarded site, not the instructor's GitHub Pages site. |
+
+If still blocked, save the failed command, Node version and error text (without secrets) when asking for help. Successful startup or an HTTP response alone does not prove that all controls and scenes work; check them in the browser.
 
 On Windows, after the first build you can also double-click **Start-GBU-Campus.cmd**. It uses the existing Codex Node runtime when available, otherwise Node from PATH, and opens the game.
 
