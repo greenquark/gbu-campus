@@ -42,6 +42,13 @@ The original development checkout uses a junction to local Three.js/Vite depende
 
 The Git repository includes `tour/`, `night/`, `shared/`, source assets, build/server tools and written evidence. Generated `dist/` and `release/`, dependencies, local `Old/` snapshots, screenshots, recordings and raw QA results are excluded. Evidence documents describe historical runs; their local capture paths are not included in this source repository.
 
+### Troubleshooting
+
+- `npm ci` fails — Make sure you have Node 22.12 or newer (`node --version`). Delete `node_modules/` and `package-lock.json`, then run `npm ci` again.
+- Browser shows a blank page — Do not double-click any HTML file. You must use the local server at `http://127.0.0.1:5190/`.
+- Port 5190 is already in use — Set the `PORT` environment variable to a different value, e.g. `PORT=5200 npm start`, then open `http://127.0.0.1:5200/`.
+- After changing source files, the page looks the same — Run `npm run build` again to rebuild, then refresh the browser.
+
 ## GitHub Pages hosting
 
 Production hosting is **GitHub Pages**, at https://greenquark.github.io/world/; night mode is at https://greenquark.github.io/world/night/.
