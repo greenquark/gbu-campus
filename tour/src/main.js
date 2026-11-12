@@ -13,8 +13,8 @@ const places={
   towers:{position:[-99,1.72,-6],target:[-122,23,-29],title:'The balcony towers',description:'Slender towers anchor the far end of the campus beside a stepped high-rise.'}
 };
 const placeOrder=Object.keys(places);
-let renderer,world,ready=false,mode='welcome',paused=false,shotPaused=false;
-let reduced=matchMedia('(prefers-reduced-motion: reduce)').matches, sensitivity=1,quality='balanced';
+let renderer,world,ready=false,mode='welcome',paused=false,shotPaused=false,lookLock=false;
+let reduced=matchMedia('(prefers-reduced-motion: reduce)').matches, sensitivity=1.5,quality='balanced';
 let tourTime=0,tourDone=false,elapsed=0,lastTime=performance.now(),activePlace='plaza',transitionId=0;
 let yaw=0,pitch=0,targetYaw=0,targetPitch=0,drag=null,toastTimer;
 const keys=new Set(),touchMove=new Set(),velocity=new THREE.Vector2();
@@ -101,16 +101,16 @@ document.addEventListener('fullscreenchange',()=>$('fullscreen').setAttribute('a
 
 addEventListener('keydown',e=>{
   if(dialogs.some(d=>d.open))return;if(e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement)return;
-  const k=e.key.toLowerCase();if(k==='escape'){e.preventDefault();togglePause();return;}if(k==='h'){openDialog('help-dialog');return;}
+  const k=e.key.toLowerCase();if(k==='escape'){e.preventDefault();if(lookLock){lookLock=false;drag=null;announce('Look lock released.');}else if(mode!=='welcome'){togglePause();}return;}if(k==='h'){openDialog('help-dialog');return;}
   if(!ready||mode==='welcome')return;
   if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','q','e','shift'].includes(k)){e.preventDefault();takeOver();keys.add(k);}
 });
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 addEventListener('blur',clearInput);
 document.addEventListener('visibilitychange',()=>{clearInput();if(document.hidden&&mode!=='welcome'){paused=true;syncUI();}audio.pause(document.hidden||paused);});
-canvas.addEventListener('pointerdown',e=>{if(mode==='welcome'||!ready||e.button!==0)return;takeOver();drag={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);canvas.focus({preventScroll:true});});
+canvas.addEventListener('pointerdown',e=>{if(mode==='welcome'||!ready||e.button!==0)return;takeOver();if(!lookLock){lookLock=true;drag={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);announce('Click to release mouse look.');canvas.focus({preventScroll:true});}else{lookLock=false;drag=null;canvas.focus({preventScroll:true});}});
 canvas.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;targetYaw-=(e.clientX-drag.x)*.003*sensitivity;targetPitch-=(e.clientY-drag.y)*.0025*sensitivity;targetPitch=THREE.MathUtils.clamp(targetPitch,-.65,.9);drag.x=e.clientX;drag.y=e.clientY;});
-for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,()=>drag=null);
+for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,()=>{if(lookLock)return;drag=null;});
 for(const b of document.querySelectorAll('[data-move]')){
   b.addEventListener('pointerdown',e=>{e.preventDefault();takeOver();b.setPointerCapture(e.pointerId);touchMove.add(b.dataset.move);});
   for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,()=>touchMove.delete(b.dataset.move));
