@@ -17,7 +17,9 @@ Night audio shuts down completely on victory, defeat, quit or exit. Pause, mute 
 
 ## Run locally
 
-For a fresh checkout, install Node 22.12 or newer, open a terminal in the repository root, then run:
+**Prerequisite:** Node.js 22.12 or newer, with npm available. Check your Node.js version with `node --version`.
+
+Open a terminal in the repository root, then run:
 
 ```sh
 npm ci
@@ -25,18 +27,36 @@ npm run build
 npm start
 ```
 
-Open http://127.0.0.1:5190/ for the day tour or http://127.0.0.1:5190/night/ for the night game. Run all commands from the repository root; the root build packages both modes together. Rebuild after changing source files. The completed build works without internet access. Fonts, geometry, materials and sound generation are local.
+- `npm ci` installs the exact dependency versions from the lockfile. Run it for a fresh checkout, or after the dependency lockfile changes.
+- `npm run build` packages both the day tour and night game into the static site served locally.
+- `npm start` starts the local server. Keep this terminal open while exploring; press `Ctrl+C` to stop the server.
+
+Open http://127.0.0.1:5190/ for the day tour or http://127.0.0.1:5190/night/ for the night game. Run all commands from the repository root. The completed build works without internet access. Fonts, geometry, materials and sound generation are local.
+
+**After changing source files:** stop the server with `Ctrl+C`, run `npm run build`, run `npm start` again, then refresh your browser. The local server serves the completed build, so source edits do not appear automatically.
 
 On Windows, after the first build you can also double-click **Start-GBU-Campus.cmd**. It uses the existing Codex Node runtime when available, otherwise Node from PATH, and opens the game.
 
-**5190 is the default local port.** Both `npm start` and the Windows launcher respect the `PORT` environment variable. To choose another port, set it before starting. For example, in PowerShell:
+**5190 is the default local port.** Both `npm start` and the Windows launcher respect the `PORT` environment variable. To use port 5200 instead, choose the example for your operating system:
+
+**Windows (PowerShell)**
 
 ```powershell
 $env:PORT = "5200"
 .\Start-GBU-Campus.cmd
 ```
 
-The launcher starts/checks the server on that port and opens http://127.0.0.1:5200/. Night mode is at http://127.0.0.1:5200/night/. You can also run `npm start` instead of the launcher after setting the same variable, then open the matching URL yourself. Use a whole-number port from 1 to 65535; if another app uses it, choose a different port. To return to the default in that PowerShell session, run `$env:PORT = $null`. This local port setting does not change the GitHub Pages URLs.
+The launcher starts/checks the server and opens the day tour automatically. You can also run `npm start` instead of the launcher after setting the same variable, then open the URL yourself. To return to the default port in that PowerShell session, run `$env:PORT = $null` before starting again.
+
+**Linux (Bash)**
+
+```bash
+PORT=5200 npm start
+```
+
+This sets the port only for this command. Open the URL yourself; the next plain `npm start` uses the default port unless `PORT` is already set in your shell.
+
+For either example, open http://127.0.0.1:5200/ for the day tour or http://127.0.0.1:5200/night/ for the night game. Use a whole-number port from 1 to 65535; if another app uses it, choose a different port. This local port setting does not change the GitHub Pages URLs.
 
 The original development checkout uses a junction to local Three.js/Vite dependencies; do not delete that node_modules junction recursively. Fresh checkouts create their own dependencies with `npm ci`.
 
