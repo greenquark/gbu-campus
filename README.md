@@ -42,6 +42,29 @@ The original development checkout uses a junction to local Three.js/Vite depende
 
 The Git repository includes `tour/`, `night/`, `shared/`, source assets, build/server tools and written evidence. Generated `dist/` and `release/`, dependencies, local `Old/` snapshots, screenshots, recordings and raw QA results are excluded. Evidence documents describe historical runs; their local capture paths are not included in this source repository.
 
+### What to expect
+
+**`npm ci`** installs exact dependency versions from `package-lock.json`. If you see errors about a missing lockfile, make sure you are in the repository root and that `package-lock.json` exists.
+
+**`npm run build`** compiles both the tour and night Vite projects into the `dist/` directory. You should see Vite build output for each mode, ending with a `Ready:` summary that reports the deployment file count and total size. If the build fails, check that the `tour/` and `night/` source directories are present and that `npm ci` completed without errors.
+
+**`npm start`** launches the local server. The terminal stays busy — this is normal: the server runs in the foreground until you stop it. You should see:
+
+```
+Campus experience is ready.
+```
+
+Open the URLs while the server is running:
+- Day tour: http://127.0.0.1:5190/
+- Night game: http://127.0.0.1:5190/night/
+
+To stop the server, press **Ctrl + C**. After changing source files, stop the server, run `npm run build` again, then `npm start` to see your changes.
+
+If you see `Campus startup failed`, check that:
+- The `dist/` directory exists and contains both `index.html` and `night/index.html`
+- No other application is using port 5190 (or your chosen `PORT`)
+- You ran `npm run build` before `npm start`
+
 ## GitHub Pages hosting
 
 Production hosting is **GitHub Pages**, at https://greenquark.github.io/world/; night mode is at https://greenquark.github.io/world/night/.
