@@ -63,3 +63,30 @@ The earlier integration suite uses local Chrome through Playwright, checks same-
 Relative building locations follow the supplied physical-model photos/video; visible facades follow the organized campus photos. Distances are compressed for gameplay. Unseen elevations, interiors and the night story remain interpretations. The site is an independent study, not an official or surveyed university reconstruction.
 
 The original Refined_Tour and Haunted_Campus folders are preserved as source history. Future changes to the unified website belong in this Campus_Experience folder. Three.js and Vite are MIT-licensed; font licenses remain with their assets. CC0 environment/material sources are retained under tour/public/environment/SOURCES.md. The existing GBU shirt crest is retained unchanged.
+
+
+---
+
+# 中文简介
+
+GBU Campus 是一个使用 Three.js 构建的 3D 校园游览网页游戏，包含白天校园观光和夜晚恐怖冒险两种模式。
+
+## 在线体验
+- 白天模式：https://greenquark.github.io/world/
+- 夜晚模式：https://greenquark.github.io/world/night/
+
+## 本地运行
+确保已安装 Node.js 22.12 或更高版本，在项目根目录打开终端，执行：
+npm ci
+npm run build
+npm start
+
+复制
+然后访问 http://127.0.0.1:5190/（白天）或 http://127.0.0.1:5190/night/（夜晚）
+
+## 项目结构
+- `tour/` — 白天校园游览模式
+- `night/` — 夜晚恐怖模式
+- `shared/` — 共享代码
+- `tools/` — 构建工具
+- `server.mjs` — 本地开发服务器
